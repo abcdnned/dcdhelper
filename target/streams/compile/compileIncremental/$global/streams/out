@@ -1,0 +1,43 @@
+[debug] [naha] 
+[debug] [naha] Initial source changes: 
+[debug] [naha] 	removed:Set()
+[debug] [naha] 	added: Set(/home/tom/gitrepo/dcdhelper/test.scala, /home/tom/gitrepo/dcdhelper/test2.scala, /home/tom/gitrepo/dcdhelper/test3.scala, /home/tom/gitrepo/dcdhelper/dcdhelper.scala)
+[debug] [naha] 	modified: Set()
+[debug] [naha] Invalidated products: Set()
+[debug] [naha] External API changes: API Changes: Set()
+[debug] [naha] Modified binary dependencies: Set()
+[debug] [naha] Initial directly invalidated sources: Set(/home/tom/gitrepo/dcdhelper/test.scala, /home/tom/gitrepo/dcdhelper/test2.scala, /home/tom/gitrepo/dcdhelper/test3.scala, /home/tom/gitrepo/dcdhelper/dcdhelper.scala)
+[debug] [naha] 
+[debug] [naha] Sources indirectly invalidated by:
+[debug] [naha] 	product: Set()
+[debug] [naha] 	binary dep: Set()
+[debug] [naha] 	external source: Set()
+[debug] All initially invalidated sources: Set(/home/tom/gitrepo/dcdhelper/test.scala, /home/tom/gitrepo/dcdhelper/test2.scala, /home/tom/gitrepo/dcdhelper/test3.scala, /home/tom/gitrepo/dcdhelper/dcdhelper.scala)
+[debug] [naha] Initial set of included nodes: Set(/home/tom/gitrepo/dcdhelper/test.scala, /home/tom/gitrepo/dcdhelper/test2.scala, /home/tom/gitrepo/dcdhelper/test3.scala, /home/tom/gitrepo/dcdhelper/dcdhelper.scala)
+[debug] [naha] Recompiling all 4 sources: invalidated sources (4) exceeded 50.0% of all sources
+[info] Compiling 4 Scala sources to /home/tom/gitrepo/dcdhelper/target/scala-2.10/classes...
+[debug] Getting org.scala-sbt:compiler-interface:0.13.15:component from component compiler for Scala 2.10.6
+[info] 'compiler-interface' not yet compiled for Scala 2.10.6. Compiling...
+[debug] Plain interface to Scala compiler 2.10.6  with arguments: 
+[debug] 	-nowarn
+[debug] 	-d
+[debug] 	/tmp/sbt_3f0d481f
+[debug] 	-bootclasspath
+[debug] 	/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/resources.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/sunrsasign.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jsse.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jce.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/charsets.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jfr.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/classes:/home/tom/.sbt/boot/scala-2.10.6/lib/scala-library.jar
+[debug] 	-classpath
+[debug] 	/home/tom/.sbt/boot/scala-2.10.6/org.scala-sbt/sbt/0.13.15/xsbti/interface-0.13.15.jar:/tmp/sbt_e4acfc12/srcs/org.scala-sbt/compiler-interface/compiler-interface-0.13.15-sources.jar:/home/tom/.sbt/boot/scala-2.10.6/lib/scala-compiler.jar:/home/tom/.sbt/boot/scala-2.10.6/lib/jline.jar:/home/tom/.sbt/boot/scala-2.10.6/lib/scala-reflect.jar:/home/tom/.sbt/boot/scala-2.10.6/lib/jansi.jar
+[debug] 	/tmp/sbt_9bf046e0/xsbt/API.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/Analyzer.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/Command.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/Compat.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/CompilerInterface.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/ConsoleInterface.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/DelegatingReporter.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/Dependency.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/ExtractAPI.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/ExtractUsedNames.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/GlobalHelpers.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/LocateClassFile.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/Log.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/Message.scala
+[debug] 	/tmp/sbt_9bf046e0/xsbt/ScaladocInterface.scala
