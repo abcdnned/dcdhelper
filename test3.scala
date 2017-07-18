@@ -19,6 +19,9 @@ class Helper{
   import java.io.PrintWriter
   import java.io.StringWriter
   import scala.collection.mutable.ArrayBuffer
+  import java.nio.file.Files
+  import java.nio.file.Path
+  import java.nio.file.DirectoryStream
 
 
   def parsePayload(packet: JPacket, breflen: Int = 100, payloadAll: Boolean = false) = {
@@ -57,26 +60,54 @@ class Helper{
     }
   }
 
+  def getRecursiveListOfFiles(dir: File): Array[File] = {
+      val all = dir.listFiles
+      val files = all.filter(_.getName.endsWith(".pcap"))
+      files ++ all.filter(_.isDirectory).flatMap(getRecursiveListOfFiles)
+  }
+
   var path: String = "/home/tom/gitrepo/dcdhelper/test.pcap"
-  //var path: String = "/home/tom/dcdreq/hnnx_1132optz/hnrcu-core-2045-#27.pcap"
 
-  class Flow(val s:Int, val e:Int) extends Target {
-    def this(id: Int) {
-      this(id, id)
+  def loadRecent: Unit = {
+    val dcdreq: File = new File("/home/tom/dcdreq")
+    val md = dcdreq.listFiles.filter(_.isDirectory).maxBy(d => d.lastModified)
+    val files = getRecursiveListOfFiles(md)
+    var i = 0
+    while (i < files.length) {
+      println("%d %s".format(i, files(i).getPath))
+      i += 1
     }
+    val x = scala.io.StdIn.readInt
+    println("load recent pcap file " + files(x).getPath)
+    path = files(x).getPath
+    Flow.load
+  }
 
-    def this(range: Range) {
-      this(range.head, range.last)
-    }
-
+  class Flow(var s: Int, var e: Int) extends Target {
+    
     def bref = {
+      for ((k, v) <- Flow.flows.slice(s, e + 1)) {
+        for (p <- v.getAll) {
+          parsePayload(p, payloadAll = true)
+        }
+      }
+    }
+
+  }
+  
+  object Flow {
+
+    val flows = new ArrayBuffer[Tuple2[JFlowKey, JFlow]]()
+    val INSTANCE = new Flow(0, 0)
+
+    def load = {
+      flows.clear()
       val errbuf = new java.lang.StringBuilder()
       val pcap = Pcap.openOffline(path, errbuf)
       if (pcap == null)
           println("fail to open pcap file")
       else {
         try {  
-          val flows = new ArrayBuffer[Tuple2[JFlowKey, JFlow]]()
           val handler: PcapPacketHandler[String] = new PcapPacketHandler[String]() {
             def nextPacket(packet: PcapPacket, msg: String) {
               val key = packet.getState.getFlowKey
@@ -90,16 +121,6 @@ class Helper{
             }
           }
           pcap.loop(-1 , handler, ">");
-          println(flows.length)
-          var i: Int = 0
-          for ((k, v) <- flows) {
-            if (i <= e && i >= s) {
-              for (p <- v.getAll) {
-                parsePayload(p, payloadAll = true)
-              }
-            }
-            i += 1
-          }
         } catch {
           case e: Exception => { println("loop failed"); throw e; }
         } finally {  
@@ -107,16 +128,20 @@ class Helper{
         }  
       }
     }
-  }
 
-  object Flow {
     def apply(n: Int): Flow = {
-      return new Flow(n)
+      INSTANCE.s = n
+      INSTANCE.e = n
+      INSTANCE
     }
 
     def apply(range: Range): Flow = {
-      return new Flow(range)
+      INSTANCE.s = range.head
+      INSTANCE.e = range.last
+      INSTANCE
     }
+
+    load
   }
 
   class Packet(val s: Int, val e: Int) extends Target {
@@ -127,6 +152,8 @@ class Helper{
     def this(range: Range) {
       this(range.head, range.last)
     }
+
+    def reload = {}
 
     def bref {
       try {
