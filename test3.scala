@@ -66,7 +66,7 @@ class Helper{
       files ++ all.filter(_.isDirectory).flatMap(getRecursiveListOfFiles)
   }
 
-  var path: String = "/home/tom/gitrepo/dcdhelper/test.pcap"
+  var path: String = "/home/tom/dcdreq/http/HTTP.pcap"
 
   def loadRecent: Unit = {
     val dcdreq: File = new File("/home/tom/dcdreq")
@@ -115,6 +115,7 @@ class Helper{
               if (iw == -1) {
                 val flow = new JFlow(key)
                 flows.append(Tuple2(key, flow))
+                flow.add(new PcapPacket(packet))
               } else {
                 flows(iw)._2.add(new PcapPacket(packet))
               }
