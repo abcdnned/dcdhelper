@@ -23,8 +23,9 @@ class Helper{
   import java.nio.file.Path
   import java.nio.file.DirectoryStream
 
+  var path: String = "/home/tom/dcdreq/http/HTTP.pcap"
 
-  def parsePayload(packet: JPacket, breflen: Int = 100, payloadAll: Boolean = false) = {
+  def normalOutputPacket(packet: JPacket, title: String, breflen: Int = 100, payloadAll: Boolean = false) = {
     val ip = new Ip4
     val tcp = new Tcp
     if (packet.hasHeader(ip) && packet.hasHeader(tcp)) {
@@ -35,6 +36,7 @@ class Helper{
       val bytes: Array[Byte] = new Array[Byte](l)
       val buff: ByteBuffer = ByteBuffer wrap bytes
       packet.transferTo(buff, s, l)
+      if (l != 0) println(title)
       println(FormatUtils.hexdump(bytes))
     }
   }
@@ -49,6 +51,54 @@ class Helper{
     }
     return ("unknown", -1, "unknown", -1)
   }
+
+  val packets = new  ArrayBuffer[Tuple3[Int, String, PcapPacket]]()
+  val flows = new ArrayBuffer[Tuple4[Int, JFlowKey, JFlow, ArrayBuffer[Int]]]()
+  def load() = {
+    try {
+      packets.clear()
+      flows.clear()
+      val errbuf = new java.lang.StringBuilder()
+      val pcap = Pcap.openOffline(path, errbuf)
+      if (pcap == null)
+          println("fail to open pcap file")
+      else {
+        var idx: Int = 0
+        var fc: Int = 0
+        val handler: PcapPacketHandler[String] = new PcapPacketHandler[String]() {
+          def nextPacket(packet: PcapPacket, msg: String) {
+            //manage packet
+            val flow = parseFlow(packet)
+            val f = "%s pktid %-4d %s:%d -> %s:%d caplen=%-4d".format(msg, idx,
+                flow._1, flow._2, flow._3, flow._4,
+                packet.getCaptureHeader().caplen() // Length actually captured  
+                )  
+            packets.append((idx, f, packet))
+            //add packet to flows
+            val key = packet.getState.getFlowKey
+            val iw = flows.indexWhere(t => t._2 == key)
+            if (iw == -1) {
+              val flow = new JFlow(key)
+              val pids = new ArrayBuffer[Int]()
+              pids.append(idx)
+              flows.append(Tuple4(fc, key, flow, pids))
+              flow.add(new PcapPacket(packet))
+              fc += 1
+            } else {
+              flows(iw)._3.add(new PcapPacket(packet))
+              flows(iw)._4.append(idx)
+            }
+            idx += 1
+          }
+        }
+        pcap.loop(-1, handler, ">");
+        pcap.close()
+      }
+    } catch {
+      case _: NumberFormatException => println("loop count must contains only decimal digits")
+    }
+  }
+  load()
 
   trait Target {
     def bref
@@ -66,7 +116,6 @@ class Helper{
       files ++ all.filter(_.isDirectory).flatMap(getRecursiveListOfFiles)
   }
 
-  var path: String = "/home/tom/dcdreq/http/HTTP.pcap"
 
   def loadRecent: Unit = {
     val dcdreq: File = new File("/home/tom/dcdreq")
@@ -80,69 +129,32 @@ class Helper{
     val x = scala.io.StdIn.readInt
     println("load recent pcap file " + files(x).getPath)
     path = files(x).getPath
-    Flow.load
+    load()
   }
 
   class Flow(var s: Int, var e: Int) extends Target {
-    
+    def this(id: Int) {
+      this(id, id)
+    }
+
     def bref = {
-      for ((k, v) <- Flow.flows.slice(s, e + 1)) {
-        for (p <- v.getAll) {
-          parsePayload(p, payloadAll = true)
+      for ((i, k, f, ps) <- flows.slice(s, e + 1)) {
+        println(">>FLOW %d :".format(i))
+        for (p <- ps) {
+          normalOutputPacket(packets(p)._3, packets(p)._2, payloadAll = true)
         }
       }
     }
-
   }
   
   object Flow {
-
-    val flows = new ArrayBuffer[Tuple2[JFlowKey, JFlow]]()
-    val INSTANCE = new Flow(0, 0)
-
-    def load = {
-      flows.clear()
-      val errbuf = new java.lang.StringBuilder()
-      val pcap = Pcap.openOffline(path, errbuf)
-      if (pcap == null)
-          println("fail to open pcap file")
-      else {
-        try {  
-          val handler: PcapPacketHandler[String] = new PcapPacketHandler[String]() {
-            def nextPacket(packet: PcapPacket, msg: String) {
-              val key = packet.getState.getFlowKey
-              val iw = flows.indexWhere(t => t._1 == key)
-              if (iw == -1) {
-                val flow = new JFlow(key)
-                flows.append(Tuple2(key, flow))
-                flow.add(new PcapPacket(packet))
-              } else {
-                flows(iw)._2.add(new PcapPacket(packet))
-              }
-            }
-          }
-          pcap.loop(-1 , handler, ">");
-        } catch {
-          case e: Exception => { println("loop failed"); throw e; }
-        } finally {  
-          pcap.close();  
-        }  
-      }
-    }
-
     def apply(n: Int): Flow = {
-      INSTANCE.s = n
-      INSTANCE.e = n
-      INSTANCE
+      return new Flow(n)
     }
 
     def apply(range: Range): Flow = {
-      INSTANCE.s = range.head
-      INSTANCE.e = range.last
-      INSTANCE
+      return new Flow(range.head, range.last)
     }
-
-    load
   }
 
   class Packet(val s: Int, val e: Int) extends Target {
@@ -150,42 +162,11 @@ class Helper{
       this(id, id)
     }
 
-    def this(range: Range) {
-      this(range.head, range.last)
-    }
-
-    def reload = {}
-
     def bref {
-      try {
-        val errbuf = new java.lang.StringBuilder()
-        val pcap = Pcap.openOffline(path, errbuf)
-        if (pcap == null)
-            println("fail to open pcap file")
-        else {
-          var idx: Int = 0
-          val handler: PcapPacketHandler[String] = new PcapPacketHandler[String]() {
-            def nextPacket(packet: PcapPacket, msg: String) {
-              idx += 1
-              if (idx >= s && idx <= e) {
-                val flow = parseFlow(packet)
-                printf("%s pktid %-4d %s:%d -> %s:%d caplen=%-4d \n", msg, idx,
-                    flow._1, flow._2, flow._3, flow._4,
-                    packet.getCaptureHeader().caplen() // Length actually captured  
-                    )  
-                parsePayload(packet, payloadAll = true)
-              }
-            }
-          }
-
-          pcap.loop(e + 1, handler, ">");
-          pcap.close()
-        }
-      } catch {
-        case _: NumberFormatException => println("loop count must contains only decimal digits")
+      for ((i, t, p) <- packets.slice(s, e + 1)) {
+        normalOutputPacket(p, t, payloadAll = true)
       }
     }
-
   }
 
   object Packet {
@@ -194,7 +175,7 @@ class Helper{
     }
 
     def apply(range: Range): Packet = {
-      return new Packet(range)
+      return new Packet(range.head, range.last)
     }
   }
 
